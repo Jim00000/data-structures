@@ -1,0 +1,125 @@
+{
+    "version": 10,
+    "cmakeMinimumRequired": {
+        "major": 4,
+        "minor": 3,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "hidden": true,
+            "displayName": "default config",
+            "description": "Debug configuration",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "BUILD_DOCS": false,
+                "ENABLE_CLANG_TIDY": false,
+                "ENABLE_COVERAGE": false,
+                "ENABLE_CPPCHECK": false,
+                "ENABLE_SANITIZE": false,
+                "ENABLE_TEST": false,
+                "ENABLE_CLANG": false
+            },
+            "environment": {}
+        },
+        {
+            "name": "cfg_debug",
+            "displayName": "Makefile + Debug Build",
+            "description": "Debug config using Makefile generator",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build/debug",
+            "toolchainFile": "cmake/ClangToolchain.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "ENABLE_CLANG_TIDY": true,
+                "ENABLE_CPPCHECK": true,
+                "ENABLE_SANITIZE": true,
+                "ENABLE_TEST": true,
+                "ENABLE_CLANG": true
+            }
+        },
+        {
+            "name": "cfg_release",
+            "displayName": "Makefile + Release Build",
+            "description": "Release config using Makefile generator",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_DOCS": true
+            }
+        },
+        {
+            "name": "cfg_codecov",
+            "displayName": "Makefile + Debug Build + Code Coverage",
+            "description": "Debug config using Makefile generator with code coverage hook",
+            "inherits": "cfg_debug",
+            "cacheVariables": {
+                "ENABLE_COVERAGE": true
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug_build",
+            "displayName": "Debug Build",
+            "configurePreset": "cfg_debug",
+            "targets": [
+                "ds",
+                "unittest"
+            ]
+        },
+        {
+            "name": "release_build",
+            "displayName": "Release Build",
+            "configurePreset": "cfg_release",
+            "targets": [
+                "ds"
+            ]
+        },
+        {
+            "name": "codecov_build",
+            "displayName": "CodeCov Build",
+            "configurePreset": "cfg_codecov",
+            "targets": [
+                "unittest",
+                "coverage"
+            ]
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default-unittests",
+            "hidden": true,
+            "configurePreset": "cfg_debug",
+            "output": {
+                "outputOnFailure": true,
+                "shortProgress": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true,
+                "timeout": 30
+            }
+        },
+        {
+            "name": "sll-unittests",
+            "inherits": "default-unittests",
+            "filter": {
+                "include": {
+                    "name": "Singly_Linked_List_Test.*"
+                }
+            }
+        },
+        {
+            "name": "all-unittests",
+            "inherits": "default-unittests"
+        },
+        {
+            "name": "codecov-unittests",
+            "inherits": "default-unittests",
+            "configurePreset": "cfg_codecov"
+        }
+    ]
+}

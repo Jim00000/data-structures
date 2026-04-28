@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jim00000
+#
+# SPDX-License-Identifier: BSD-3-Clause
+include_guard (DIRECTORY)
+
+# set (CMAKE_C_COMPILER clang)
+# set (CMAKE_CXX_COMPILER clang++)

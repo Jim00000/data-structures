@@ -1,0 +1,120 @@
+# SPDX-FileCopyrightText: 2026 Jim00000
+#
+# SPDX-License-Identifier: CC0-1.0
+
+---
+Checks: '
+  bugprone-assert-side-effect,
+  bugprone-assignment-in-if-condition,
+  bugprone-bad-signal-to-kill-thread,
+  bugprone-bool-pointer-implicit-conversion,
+  bugprone-infinite-loop,
+  bugprone-integer-division,
+  bugprone-macro-parentheses,
+  bugprone-macro-repeated-side-effects,
+  bugprone-multiple-statement-macro,
+  bugprone-no-escape,
+  bugprone-non-zero-enum-to-bool-conversion,
+  bugprone-not-null-terminated-result,
+  bugprone-posix-return,
+  bugprone-reserved-identifier,
+  bugprone-signal-handler,
+  bugprone-signed-char-misuse,
+  bugprone-sizeof-container,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-include,
+  bugprone-suspicious-memory-comparison,
+  bugprone-suspicious-memset-usage,
+  bugprone-suspicious-missing-comma,
+  bugprone-suspicious-realloc-usage,
+  bugprone-suspicious-semicolon,
+  bugprone-suspicious-string-compare,
+  bugprone-switch-missing-default-case,
+  bugprone-terminating-continue,
+  bugprone-too-small-loop-variable,
+  bugprone-undefined-memory-manipulation,
+  bugprone-unsafe-functions,
+  bugprone-unused-return-value,
+  cert-*,
+  clang-analyzer-deadcode.DeadStores,
+  misc-confusable-identifiers,
+  misc-definitions-in-headers,
+  misc-header-include-cycle,
+  misc-include-cleaner,
+  misc-misleading-identifier,
+  misc-redundant-expression,
+  misc-static-assert,
+  misc-unused-parameters,
+  misc-unused-using-decls,
+  readability-avoid-const-params-in-decls,
+  readability-avoid-nested-conditional-operator,
+  readability-avoid-return-with-void-value,
+  readability-avoid-unconditional-preprocessor-if,
+  readability-braces-around-statements,
+  readability-const-return-type,
+  readability-duplicate-include,
+  readability-else-after-return,
+  readability-identifier-length,
+  readability-identifier-naming,
+  readability-inconsistent-declaration-parameter-name,
+  readability-isolate-declaration,
+  readability-misleading-indentation,
+  readability-misplaced-array-index,
+  readability-named-parameter,
+  readability-non-const-parameter,
+  readability-operators-representation,
+  readability-redundant-casting,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-redundant-function-ptr-dereference,
+  readability-redundant-inline-specifier,
+  readability-redundant-preprocessor,
+  readability-simplify-boolean-expr,
+  readability-simplify-subscript-expr,
+  readability-suspicious-call-argument,
+  readability-uppercase-literal-suffix'
+  # disable: 
+  # - readability-implicit-bool-conversion
+WarningsAsErrors: '
+  readability-braces-around-statements,
+  readability-identifier-naming'
+HeaderFileExtensions:
+  - ''
+  - h
+ImplementationFileExtensions:
+  - c
+HeaderFilterRegex: '.*'
+FormatStyle: file
+CheckOptions:
+  cert-dcl16-c.NewSuffixes: 'L;LL;LU;LLU'
+  cert-err33-c.AllowCastToVoid: 'true'
+  cert-err33-c.CheckedFunctions: '::aligned_alloc;::asctime_s;::at_quick_exit;::atexit;::bsearch;::bsearch_s;::btowc;::c16rtomb;::c32rtomb;::calloc;::clock;::cnd_broadcast;::cnd_init;::cnd_signal;::cnd_timedwait;::cnd_wait;::ctime_s;::fclose;::fflush;::fgetc;::fgetpos;::fgets;::fgetwc;::fopen;::fopen_s;::fprintf;::fprintf_s;::fputc;::fputs;::fputwc;::fputws;::fread;::freopen;::freopen_s;::fscanf;::fscanf_s;::fseek;::fsetpos;::ftell;::fwprintf;::fwprintf_s;::fwrite;::fwscanf;::fwscanf_s;::getc;::getchar;::getenv;::getenv_s;::gets_s;::getwc;::getwchar;::gmtime;::gmtime_s;::localtime;::localtime_s;::malloc;::mbrtoc16;::mbrtoc32;::mbsrtowcs;::mbsrtowcs_s;::mbstowcs;::mbstowcs_s;::memchr;::mktime;::mtx_init;::mtx_lock;::mtx_timedlock;::mtx_trylock;::mtx_unlock;::printf_s;::putc;::putwc;::raise;::realloc;::remove;::rename;::scanf;::scanf_s;::setlocale;::setvbuf;::signal;::snprintf;::snprintf_s;::sprintf;::sprintf_s;::sscanf;::sscanf_s;::strchr;::strerror_s;::strftime;::strpbrk;::strrchr;::strstr;::strtod;::strtof;::strtoimax;::strtok;::strtok_s;::strtol;::strtold;::strtoll;::strtoul;::strtoull;::strtoumax;::strxfrm;::swprintf;::swprintf_s;::swscanf;::swscanf_s;::thrd_create;::thrd_detach;::thrd_join;::thrd_sleep;::time;::timespec_get;::tmpfile;::tmpfile_s;::tmpnam;::tmpnam_s;::tss_create;::tss_get;::tss_set;::ungetc;::ungetwc;::vfprintf;::vfprintf_s;::vfscanf;::vfscanf_s;::vfwprintf;::vfwprintf_s;::vfwscanf;::vfwscanf_s;::vprintf_s;::vscanf;::vscanf_s;::vsnprintf;::vsnprintf_s;::vsprintf;::vsprintf_s;::vsscanf;::vsscanf_s;::vswprintf;::vswprintf_s;::vswscanf;::vswscanf_s;::vwprintf_s;::vwscanf;::vwscanf_s;::wcrtomb;::wcschr;::wcsftime;::wcspbrk;::wcsrchr;::wcsrtombs;::wcsrtombs_s;::wcsstr;::wcstod;::wcstof;::wcstoimax;::wcstok;::wcstok_s;::wcstol;::wcstold;::wcstoll;::wcstombs;::wcstombs_s;::wcstoul;::wcstoull;::wcstoumax;::wcsxfrm;::wctob;::wctrans;::wctype;::wmemchr;::wprintf_s;::wscanf;::wscanf_s;'
+  cert-str34-c.DiagnoseSignedUnsignedCharComparisons: 'false'
+  readability-identifier-naming.ConstantCase: 'UPPER_CASE'
+  readability-identifier-naming.ConstantParameterCase: 'lower_case'
+  readability-identifier-naming.ConstantPointerParameterCase: 'lower_case'
+  readability-identifier-naming.EnumCase: 'UPPER_CASE'
+  readability-identifier-naming.EnumConstantCase: 'UPPER_CASE'
+  readability-identifier-naming.FunctionCase: 'lower_case'
+  readability-identifier-naming.GlobalConstantCase: 'UPPER_CASE'
+  readability-identifier-naming.GlobalConstantPointerCase: 'lower_case'
+  readability-identifier-naming.GlobalFunctionCase: 'lower_case'
+  readability-identifier-naming.GlobalPointerCase: 'lower_case'
+  readability-identifier-naming.GlobalVariableCase: 'lower_case'
+  readability-identifier-naming.LocalConstantCase: 'UPPER_CASE'
+  readability-identifier-naming.LocalConstantPointerCase: 'lower_case'
+  readability-identifier-naming.LocalPointerCase: 'lower_case'
+  readability-identifier-naming.LocalVariableCase: 'lower_case'
+  readability-identifier-naming.MacroDefinitionCase: 'UPPER_CASE'
+  readability-identifier-naming.ParameterCase: 'lower_case'
+  readability-identifier-naming.PointerParameterCase: 'lower_case'
+  readability-identifier-naming.ScopedEnumConstantCase: 'UPPER_CASE'
+  readability-identifier-naming.StaticConstantCase: 'UPPER_CASE'
+  readability-identifier-naming.StaticVariableCase: 'lower_case'
+  readability-identifier-naming.StructCase: 'CamelCase'
+  readability-identifier-naming.TypedefCase: 'lower_case'
+  readability-identifier-naming.TypedefSuffix: '_t'
+  readability-identifier-naming.UnionCase: 'CamelCase'
+  readability-identifier-naming.VariableCase: 'lower_case'
+SystemHeaders:   false
+...

@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2026 Jim00000
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: CI Debug
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Main Repo
+        uses: actions/checkout@v6
+        with:
+          path: main-repo
+
+      - name: Set reusable strings
+        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: | 
+          sudo apt update
+          sudo apt install -y tree ca-certificates gpg wget git gcc clang cppcheck clang-tidy cmake libssl-dev
+
+      - name: Download CMake Source
+        run: |
+          wget https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2.tar.gz
+          tar zxvf cmake-4.3.2.tar.gz
+
+      - name: Build CMake
+        run: |
+          cd cmake-4.3.2
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          sudo cmake --install build
+
+      - name: Git clone GoogleTest
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone https://github.com/google/googletest.git
+
+      - name: Build GoogleTest
+        working-directory: ${{ github.workspace }}/googletest
+        run: |
+          git checkout v1.17.0
+          cmake -S . -B build/ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/
+          sudo cmake --install build/
+
+      - name: Create Python Virtual Environment
+        working-directory: ${{ github.workspace }}
+        run: |
+          python3 -m venv ~/.venv
+          source ~/.venv/bin/activate
+          pip install --upgrade pip
+
+      - name: Install REUSE Tool
+        run: |
+          source ~/.venv/bin/activate
+          python3 -m pip install reuse
+
+      - name: Check REUSE compilance
+        working-directory: ${{ github.workspace }}/main-repo
+        run: |
+          source ~/.venv/bin/activate
+          reuse lint
+
+      - name: Configure CMake
+        working-directory: ${{ github.workspace }}/main-repo
+        run: cmake -S . -B build --preset cfg_debug
+
+      - name: Build
+        working-directory: ${{ github.workspace }}/main-repo
+        run: cmake --build build
+
+      - name: Test
+        working-directory: ${{ github.workspace }}/main-repo
+        run: | 
+         ctest --preset=all-unittests --test-dir=build/ --output-on-failure --stop-on-failure --timeout 30
