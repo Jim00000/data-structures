@@ -26,6 +26,10 @@
  * for concurrent access.
  */
 
+/* Debug */
+#include <stdint.h>
+#include <stdio.h>
+
 #include <assert.h>
 #include <stddef.h>
 
@@ -246,6 +250,149 @@ merge (sll_node_t *left, sll_node_t *right, sll_node_t **out_tail, sll_compare_f
   return dummy_head.next;
 }
 
+static sll_node_t *
+iter_next_node (const sll_iter_t *iter)
+{
+  if (iter->is_before_begin)
+    {
+      return iter->src->head;
+    }
+
+  if (!iter->node)
+    {
+      return NULL;
+    }
+
+  return iter->node->next;
+}
+
+static sll_iter_t
+sll_find_prev (sll_iter_t node)
+{
+  /* This function doesn't accept before_begin case */
+  assert (!node.is_before_begin);
+  assert (node.src);
+
+  sll_node_t *prev = NULL;
+  sll_node_t *curr = node.src->head;
+
+  while (curr != node.node)
+    {
+      prev = curr;
+      curr = curr->next;
+    }
+
+  sll_iter_t target = { .is_before_begin = curr == node.src->head ? true : false,
+                        .node = prev,
+                        .src = node.src,
+                        .version_snapshot = node.version_snapshot };
+
+  return target;
+}
+
+static sll_range_t
+detach_range (sll_t *src, sll_iter_t *first_prev, sll_iter_t *last_prev)
+{
+  assert (src);
+  assert (first_prev);
+
+  /* empty range */
+  if (iter_next_node (first_prev) == iter_next_node (last_prev))
+    {
+      return (sll_range_t){ 0 };
+    }
+
+  sll_node_t *first = iter_next_node (first_prev);
+  sll_node_t *last = iter_next_node (last_prev);
+
+  sll_range_t range = { .head = first, .tail = last_prev->node, .size = 0 };
+
+  if (first_prev->is_before_begin)
+    {
+      src->head = last;
+    }
+  else
+    {
+      first_prev->node->next = last;
+    }
+
+  if (last == NULL)
+    {
+      src->tail = first_prev->is_before_begin ? NULL : first_prev->node;
+    }
+
+  range.tail->next = NULL;
+
+  for (sll_node_t *curr = range.head; curr; curr = curr->next)
+    {
+      range.size++;
+    }
+
+  src->size -= range.size;
+  src->version++;
+
+  return range;
+}
+
+static void
+attach_after (sll_t *dst, sll_iter_t *pos, sll_range_t *range)
+{
+  assert (dst);
+  assert (pos);
+  assert (range);
+  assert (pos->src == dst);
+  assert (sll_contains (dst, pos));
+
+  /* empty range */
+  if (range->size == 0)
+    {
+      return;
+    }
+
+  assert (range->head);
+  assert (range->tail);
+  assert (range->tail->next == NULL);
+
+  /* append to the head */
+  if (pos->is_before_begin)
+    {
+      range->tail->next = dst->head;
+      dst->head = range->head;
+      dst->size += range->size;
+      dst->version++;
+      return;
+    }
+
+  if (pos->node)
+    {
+      range->tail->next = pos->node->next;
+      pos->node->next = range->head;
+      /* update tail */
+      if (pos->node == dst->tail)
+        {
+          dst->tail = range->tail;
+        }
+    }
+  else
+    {
+      /* append to tail */
+      if (dst->tail)
+        {
+          dst->tail->next = range->head;
+          dst->tail = range->tail;
+        }
+      else
+        {
+          /* empty dst */
+          dst->head = range->head;
+          dst->tail = range->tail;
+        }
+    }
+
+  dst->size += range->size;
+  dst->version++;
+}
+
 sll_t *
 sll_create (void)
 {
@@ -332,17 +479,30 @@ sll_back (const sll_t *sll, void **result)
 }
 
 sll_iter_t
+sll_before_begin (const sll_t *sll)
+{
+  assert (sll);
+  return (sll_iter_t){
+    .node = NULL, .src = sll, .version_snapshot = sll->version, .is_before_begin = true
+  };
+}
+
+sll_iter_t
 sll_begin (const sll_t *sll)
 {
   assert (sll);
-  return (sll_iter_t){ .node = sll->head, .src = sll, .version_snapshot = sll->version };
+  return (sll_iter_t){
+    .node = sll->head, .src = sll, .version_snapshot = sll->version, .is_before_begin = false
+  };
 }
 
 sll_iter_t
 sll_end (const sll_t *sll)
 {
   assert (sll);
-  return (sll_iter_t){ .node = NULL, .src = sll, .version_snapshot = sll->version };
+  return (sll_iter_t){
+    .node = NULL, .src = sll, .version_snapshot = sll->version, .is_before_begin = false
+  };
 }
 
 bool
@@ -355,7 +515,12 @@ sll_iter_is_consistent (const sll_iter_t *iterator)
 sll_iter_t
 sll_next (sll_iter_t iterator)
 {
-  if (iterator.node != NULL)
+  if (iterator.is_before_begin)
+    {
+      iterator.node = iterator.src->head;
+      iterator.is_before_begin = false;
+    }
+  else if (iterator.node != NULL)
     {
       iterator.node = iterator.node->next;
     }
@@ -780,131 +945,74 @@ sll_sort (sll_t *sll, sll_compare_fn_t cmp)
   sll_assert_invariant (sll);
 }
 
-typedef struct
+void
+sll_print (sll_node_t *iter)
 {
-  sll_node_t *head;
-  sll_node_t *tail;
-  size_t size;
-} sll_range_t;
-
-static sll_range_t
-detach_range (sll_t *src, sll_iter_t *first, sll_iter_t *last)
-{
-  assert (src);
-  assert (first);
-  assert (sll_contains (src, first));
-  assert (sll_contains (src, last));
-
-  /* empty range */
-  if (first->node->next == last->node)
+  while (iter)
     {
-      return (sll_range_t){ 0 };
+      printf ("%ld -> ", (intptr_t)iter->data);
+      iter = iter->next;
     }
-
-  sll_range_t range = { .head = first->node->next, .size = 0 };
-
-  if (last->node == NULL)
-    {
-      range.tail = src->tail;
-      first->node->next = NULL;
-      src->tail = first->node;
-    }
-  else
-    {
-      range.tail = last->node;
-      first->node->next = last->node->next;
-    }
-
-  assert (range.tail);
-  range.tail->next = NULL;
-
-  /* compute size */
-  for (sll_node_t *curr = range.head; curr && (curr != last->node); curr = curr->next)
-    {
-      range.size++;
-    }
-
-  assert (range.size > 0);
-  src->size -= range.size;
-  src->version++;
-
-  return range;
-}
-
-static void
-attach_after (sll_t *dst, sll_iter_t *pos, sll_range_t *range)
-{
-  assert (dst);
-  assert (pos);
-  assert (range);
-  assert (pos->src == dst);
-  assert (sll_contains (dst, pos));
-
-  /* empty range */
-  if (range->size == 0)
-    {
-      return;
-    }
-
-  assert (range->head);
-  assert (range->tail);
-  assert (range->tail->next == NULL);
-
-  if (pos->node)
-    {
-      range->tail->next = pos->node->next;
-      pos->node->next = range->head;
-
-      if (pos->node == dst->tail)
-        {
-          dst->tail = range->tail;
-        }
-    }
-  else
-    {
-      /* append to tail */
-
-      if (dst->tail)
-        {
-          dst->tail->next = range->head;
-          dst->tail = range->tail;
-        }
-      else
-        {
-          /* empty dst */
-          dst->head = range->head;
-          dst->tail = range->tail;
-        }
-    }
-
-  dst->size += range->size;
-  dst->version++;
+  printf ("null\n");
 }
 
 ds_sts_t
-sll_splice_after (sll_t *dst, sll_iter_t *pos, sll_t *src, sll_iter_t *first, sll_iter_t *last)
+sll_splice_after (sll_t *dst, sll_iter_t pos, sll_t *src, sll_iter_t first, sll_iter_t last)
 {
   assert (dst);
-  assert (pos);
   assert (src);
-  assert (first);
-  assert (last);
 
-  if (!dst || !pos || !src || !first || !last || (first->node == last->node))
+  if (!dst || !src)
     {
       return DS_STS_INVALID_PARAM;
     }
 
-  assert (pos->src == dst);
-  assert (first->src == src);
-  assert (last->src == src);
-  assert (sll_iter_is_consistent (pos));
-  assert (sll_iter_is_consistent (first));
-  assert (sll_iter_is_consistent (last));
-  assert (sll_contains (src, first));
+  assert (pos.src == dst);
+  assert (first.src == src);
+  assert (last.src == src);
 
-  sll_range_t range = detach_range (src, first, last);
-  attach_after (dst, pos, &range);
+  assert (pos.is_before_begin || sll_iter_is_consistent (&pos));
+  assert (first.is_before_begin || sll_iter_is_consistent (&first));
+  assert (last.node == NULL || sll_iter_is_consistent (&last));
+
+  assert (first.is_before_begin || sll_contains (src, &first));
+  assert (last.node == NULL || sll_contains (src, &last));
+
+  /* forbid self splice */
+  if (dst == src)
+    {
+      return DS_STS_INVALID_PARAM;
+    }
+
+  /* empty range */
+  if (iter_next_node (&first) == last.node)
+    {
+      return DS_STS_OK;
+    }
+
+  sll_iter_t last_prev = sll_find_prev (last);
+  sll_range_t range = detach_range (src, &first, &last_prev);
+
+  printf ("[DBG] head : %d\n", (intptr_t)range.head->data);
+  printf ("[DBG] tail : %d\n", (intptr_t)range.tail->data);
+  printf ("[DBG] size : %u\n", range.size);
+  printf ("destination list:\n");
+  sll_print (dst->head);
+  printf ("detach list:\n");
+  sll_print (range.head);
+  printf ("source list:\n");
+  sll_print (src->head);
+
+  attach_after (dst, &pos, &range);
+
+  printf ("[after] destination list:\n");
+  sll_print (dst->head);
+  printf ("[DBG] head : %d\n", (intptr_t)dst->head->data);
+  printf ("[DBG] tail : %d\n", (intptr_t)dst->tail->data);
+  printf ("[DBG] size : %u\n", dst->size);
+
+  sll_assert_invariant (src);
+  sll_assert_invariant (dst);
 
   return DS_STS_OK;
 }

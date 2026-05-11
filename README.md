@@ -12,7 +12,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 - AFL++ or other fuzz test framework (maybe ?)
 - Google Benchmark
-- Github Action (CI)
 
 ## TODO containers
 

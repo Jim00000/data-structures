@@ -15,6 +15,13 @@ struct SllNode
   sll_node_t *next;
 };
 
+typedef struct
+{
+  sll_node_t *head;
+  sll_node_t *tail;
+  size_t size;
+} sll_range_t;
+
 struct Sll
 {
   sll_node_t *head;

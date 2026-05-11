@@ -520,8 +520,35 @@ TEST_F (Singly_Linked_List_Test, TestSpliceAfterAPI)
 
   sll_iter_t it = sll_begin (sll);
   sll_iter_t first = sll_begin (src); // 10
-  sll_iter_t end = sll_end (src); // null
-  sll_splice_after (sll, &it, src, &first, &end);
+  sll_iter_t end = sll_end (src);     // null
+  ASSERT_EQ (sll_splice_after (sll, it, src, first, end), DS_STS_OK);
+
+  it = sll_begin (sll);
+  ASSERT_EQ (sll_iter_data (&it), (void *)1);
+  it = sll_next (it);
+  ASSERT_EQ (sll_iter_data (&it), (void *)11);
+  it = sll_next (it);
+  ASSERT_EQ (sll_iter_data (&it), (void *)12);
+  it = sll_next (it);
+  ASSERT_EQ (sll_iter_data (&it), (void *)2);
+  it = sll_next (it);
+  ASSERT_EQ (sll_iter_data (&it), (void *)3);
+  it = sll_next (it);
+  ASSERT_EQ (sll_iter_data (&it), (void *)4);
+  it = sll_next (it);
+  ASSERT_EQ (sll_iter_data (&it), (void *)5);
+  ASSERT_EQ (sll_size (sll), 7);
+
+  sll_clear (sll, nullptr);
+  sll_clear (src, nullptr);
+
+  sll_push_back (src, (void *)10);
+  sll_push_back (src, (void *)11);
+  sll_push_back (src, (void *)12);
+  sll_iter_t begin = sll_before_begin (sll);
+  first = sll_before_begin (src);
+  end = sll_end (src);
+  ASSERT_EQ (sll_splice_after (sll, begin, src, first, end), DS_STS_OK);
 
   sll_free (src, nullptr);
 }

@@ -49,3 +49,8 @@ if (ENABLE_COVERAGE)
         COMMENT "Trigger Code Coverage Task..."
     )
 endif ()
+
+# Demo (DEBUG)
+add_executable (demo demo.c)
+target_link_libraries(demo PUBLIC ds)
+target_link_options(demo PUBLIC -fsanitize=address,undefined,leak)

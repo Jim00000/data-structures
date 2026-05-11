@@ -54,6 +54,7 @@ typedef struct SllIter
   struct SllNode *node;            ///< Pointer to current list node.
   const sll_t *src;                ///< Pointer to the original list.
   iter_version_t version_snapshot; ///< Snapshot of list version for invalidation detection.
+  bool is_before_begin;
 } sll_iter_t;
 
 /**
@@ -179,6 +180,8 @@ bool sll_front (const sll_t *sll, void **result);
  * O(1)
  */
 bool sll_back (const sll_t *sll, void **result);
+
+sll_iter_t sll_before_begin (const sll_t *sll);
 
 /**
  * @brief Return an iterator to the first element of the list.
@@ -454,8 +457,8 @@ void sll_reverse (sll_t *sll);
  */
 void sll_sort (sll_t *sll, sll_compare_fn_t cmp);
 
-ds_sts_t sll_splice_after (sll_t *dst, sll_iter_t *pos, sll_t *src, sll_iter_t *first,
-                           sll_iter_t *last);
+ds_sts_t sll_splice_after (sll_t *dst, sll_iter_t pos, sll_t *src, sll_iter_t first,
+                           sll_iter_t last);
 
 /**
  * @brief Get the number of elements in the list.
